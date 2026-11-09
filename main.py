@@ -15,7 +15,6 @@ room_types = {
             "freedom": "The end."
             }
 
-
 game_active = True
 
 turn_input = ""
@@ -25,12 +24,37 @@ class Rooms:
 
 class TextData:
     room_descripton = {
-        "start": "You find yourself in some mystical woods with fog all around, dense trees and seemingly no easy way out. \nYour options are simple, give up and starve here, or go explore this area. Determined, Thea looks around and decides for the less tragic ending\n\n"
+        "start": "You find yourself in some mystical woods with fog all around, dense trees and seemingly no easy way out. \nYour options are simple, give up and starve here, or go explore this area. \nDetermined, Thea looks around, explores her surroundings and ultimatively decides for the less tragic ending\n",
+        "tall_grass": "",
+        "grass": "You find nothing really here, just some clovers, flowers and other foliages spread around. \nYou could search for a 4-leaf clover here and pick it up, if you're lucky enough to find one.\n\n"
     }   
+    room_directions = {
+        "fog": ", there is dense fog blocking your sight",
+        "fallen_tree": ", there is a fallen down tree, you can't go this way.",
+        "grass":", there is nothing but grass",
+        "tall_grass": ", there is some tall grass that hinders your visibility.",
+        "chest": ", there is a clearing where sunlight shines onto a very shiny chest."
+        ""
+    }
 
 class Game:
     current_game_state = 0
-    current_room = "start"
+    current_room_type = "start"
+    directions = [
+        ["fallen_tree", "grass", "fallen_tree"],
+        ["grass", "tall_grass", "grass"],
+        []
+        ]
+    locations = [
+        ["",1,""],
+        [2,3,4],
+        []
+    ]
+    current_location = 0
+    location_history = [current_location]
+    room_type_history = [current_room_type]
+    blocked_directions = []
+    fight_active = False
 
 class Player:
     health = 20
@@ -61,7 +85,6 @@ def Startup():
               "You haven't entered a correct answer. Please type either 1 or 2 and press Enter.")
         time.sleep(3)
     ClearCLI()
-       
 
 def Tutorial():
     ClearCLI()
@@ -119,22 +142,72 @@ def Tutorial():
     GameStart()
 
 def DrawLocation():
+
     ClearCLI()
-    print(f"{room_types[Game.current_room]}\n\n\n"
-          f"{TextData.room_descripton[Game.current_room]}")
+    print(f"{room_types[Game.current_room_type]}\n\n\n"
+        f"{TextData.room_descripton[Game.current_room_type]}\n"
+        f">To your left{TextData.room_directions[Game.directions[Game.current_location][0]]}\n"
+        f">In front of you{TextData.room_directions[Game.directions[Game.current_location][1]]}\n"
+        f">To your right{TextData.room_directions[Game.directions[Game.current_location][2]]}\n")
     
+    if Game.blocked_directions[0] == False:
+        print("[1] Go to the Left    ", end=" ")
+    if Game.blocked_directions[1] == False:
+        print("[2] Go Straight    ", end=" ")
+    if Game.blocked_directions[2] == False:
+        print("[3] Go to the Right    ", end=" ")
+    if Game.current_location != 0:
+        print("[4] Go Back    ", end=" ")
+    print("\n")
+
+def MoveLocation():
+    turn_input = input()
+    
+    if Game.blocked_directions[0] == False and turn_input == "1":
+        Game.current_room_type = Game.directions[Game.current_location][0]
+        Game.current_location = Game.locations[Game.current_location][0]
+        Game.location_history.append(Game.current_location)
+        Game.room_type_history.append(Game.current_room_type)
+    elif Game.blocked_directions[1] == False and turn_input == "2":
+        Game.current_room_type = Game.directions[Game.current_location][1]
+        Game.current_location = Game.locations[Game.current_location][1]
+        Game.location_history.append(Game.current_location)
+        Game.room_type_history.append(Game.current_room_type)
+    elif Game.blocked_directions[2] == False and turn_input == "3":
+        Game.current_room_type = Game.directions[Game.current_location][2]
+        Game.current_location = Game.locations[Game.current_location][2]
+        Game.location_history.append(Game.current_location)
+        Game.room_type_history.append(Game.current_room_type)
+    elif Game.current_location != 0 and turn_input == "4":
+        Game.location_history.pop()
+        Game.room_type_history.pop()
+        Game.current_location = Game.location_history[-1]
+        Game.current_room_type = Game.room_type_history[-1]
+      
 def GameStart():
     Game.current_game_state = 1
 
 def EnvironmentEvent():
-    input()
 
-def GameTurn(turn_input):
-    DrawLocation()
+   #Check for valid directions 
+    Game.blocked_directions.clear()
+    for x in Game.directions[Game.current_location]:
+        if x == "fallen_tree":
+            Game.blocked_directions.append(True)
+        else:
+            Game.blocked_directions.append(False)   
+
+def GameTurn():
+    #print(Game.room_type_history)
     EnvironmentEvent()
-    turn_input = input()
+    if Game.fight_active == False:
+        DrawLocation()
+        MoveLocation()
+    else:
+        FightTurn()
+        DrawFight()
 
-  
+
 
 
 
@@ -144,7 +217,7 @@ while game_active:
         Startup()
 
     if Game.current_game_state == 1:
-        GameTurn(turn_input)
+        GameTurn()
     
     if Game.current_game_state == 2:
         game_active = False
